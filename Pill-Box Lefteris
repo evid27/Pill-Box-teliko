@@ -2,177 +2,154 @@ const int buzzerPin = 7; //το pin στο οποίο είναι συνδεδε�
 const int ledOnePin = 8; //το pin στο οποίο είναι συνδεδεμένο το λαμπάκι για το πρώτο καπάκι
 const int ledTwoPin = 9; //το pin στο οποίο είναι συνδεδεμένο το λαμπάκι για το δεύτερο καπάκι
 
+
+
 const unsigned long INTERVAL = 5000; //Ο χρόνος που μεσολαβεί μεταξύ τη λήψη δύο δοσολογιών των φαρμάκων
 unsigned long previousTime = 0; //Η χρονική στιγμή όπου έγινε η λήψη του προηγούμενου φαρμάκου
 unsigned long led1Time = 0;
-unsigned long led2Time = 0; 
+unsigned long led2Time = 0;
+
 boolean buzzerRinging = false; //μεταβλητή που αντιπροσωπεύει εάν ο βομβητής χτυπάει ή όχι
 boolean xapi1 = false;
 boolean xapi2 = false;
 boolean flag1 = false;
 boolean flag2 = false;
 
-
 unsigned long previousMillis1 = -10000;
 unsigned long previousMillis2 = 0;
 unsigned long ledMillis1 = 0;
 unsigned long ledMillis2 = 0;
+
 const long interval1 = 20000;
 const long interval2 = 20000;
 const long intervalled = 200;
-const int SENSOR_2_TRIGGER = 11; //trigger του αριστερού υπέρηχου
-const int SENSOR_2_ECHO = 10; //echo του αριστερού υπέρηχου
-const int SENSOR_1_TRIGGER = 13; //trigger του δεξιού υπέρηχου
-const int SENSOR_1_ECHO = 12; //echo του δεξιού υπέρηχου
 
-int ledState1= LOW;
-int ledState2 = LOW;  
+int ledState1 = LOW;
+int ledState2 = LOW;
 int timer = 0;
 
+int switchReed1 = 5;
+int switchReed2 = 6;
+
 void setup() {
+
   //Θέσε τα pin ως εξόδους και εισόδους αντίστοιχα
   pinMode(ledOnePin, OUTPUT);
   pinMode(ledTwoPin, OUTPUT);
+  pinMode(switchReed1, INPUT);
+  pinMode(switchReed2, INPUT);
   tone(buzzerPin, 1000, 20); //ένας σύντομος χαρακτηριστικός ήχος ώστε να ξέρουμε πότε ξεκινάει το πρόγραμμά μας
-  //sensor1.attach(SENSOR_1_TRIGGER, SENSOR_1_ECHO); // αρχικοποίησε τον υπέρηχο στα κατάλληλα pins
-  //sensor2.attach(SENSOR_2_TRIGGER, SENSOR_2_ECHO);
-  pinMode(SENSOR_1_TRIGGER, OUTPUT);
-  pinMode(SENSOR_1_ECHO, INPUT);
-  pinMode(SENSOR_2_TRIGGER,OUTPUT);
-  pinMode(SENSOR_2_ECHO, INPUT);
   Serial.begin(9600);
+
 }
+
+
 
 void loop() {
-  
+
   unsigned long currentMillis = millis(); //Αποθήκευσε την τωρινή χρονική στιγμή (σε μιλλισεκόντ) στη μεταβλητή με όνομα currentTime τύπου unsigned long
-  long distance1, distance2, duration1, duration2;
+  long distance1, distance2, duration1, duration;
 
-  pinMode(SENSOR_1_TRIGGER, OUTPUT);
-  digitalWrite(SENSOR_1_TRIGGER, LOW);
-  delayMicroseconds(2);
-  digitalWrite(SENSOR_1_TRIGGER, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(SENSOR_1_TRIGGER, LOW);
+  if ( digitalRead(switchReed1) == HIGH && currentMillis - previousMillis1 >= interval1 && xapi1 == false) {
 
+    //Άναψε το πρώτο λαμπάκι στο pin ledOnePin, ώστε να δείξεις στο χρήστη ποιο καπάκι πρέπει να ανοιξει
+    xapi1 = true;
+    digitalWrite(ledOnePin, HIGH);
+    tone(buzzerPin, 1000);
+    buzzerRinging = true;
+    delay(200);
+    previousMillis1 = currentMillis;
+  }
 
-  pinMode(SENSOR_1_ECHO, INPUT);  
-  duration1 = pulseIn(SENSOR_1_ECHO, HIGH);
-  delay(100);
+  if ( digitalRead(switchReed1) == LOW && xapi1 == true ) {
+    flag1 = true;
+    if ((currentMillis - ledMillis1) >= intervalled) {
+      // save the last time you blinked the LED
 
-  pinMode(SENSOR_2_TRIGGER, OUTPUT);
-  digitalWrite(SENSOR_2_TRIGGER, LOW);
-  delayMicroseconds(2);
-  digitalWrite(SENSOR_2_TRIGGER, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(SENSOR_2_TRIGGER, LOW);
- 
-  pinMode(SENSOR_2_ECHO, INPUT);
-  duration2 = pulseIn(SENSOR_2_ECHO, HIGH);
-  delay(100);
-  distance1 = microsecondsToCentimeters(duration1);
-  distance2 = microsecondsToCentimeters(duration2);
-  
+      ledMillis1 = currentMillis;
+      // if the LED is off turn it on and vice-versa:
 
-  if ( distance1 <= 5 && currentMillis - previousMillis1 >= interval1 && xapi1 == false) {
-      //Άναψε το πρώτο λαμπάκι στο pin ledOnePin, ώστε να δείξεις στο χρήστη ποιο καπάκι πρέπει να ανοιξει
-      xapi1 = true;
-      digitalWrite(ledOnePin, HIGH);
-      tone(buzzerPin, 1000);
-      buzzerRinging = true;
-      delay(200); 
-      previousMillis1 = currentMillis;
-    }
-    
-    if (distance1 > 5 && xapi1 == true ) {
-      flag1 = true;
-      if ((currentMillis - ledMillis1) >= intervalled) {
-    // save the last time you blinked the LED
-    ledMillis1 = currentMillis;
-
-    // if the LED is off turn it on and vice-versa:
-    if (ledState1 == LOW) {
-      ledState1 = HIGH;
-    } else {
-      ledState1 = LOW;
-    }
-    digitalWrite(ledOnePin, ledState1);
+      if (ledState1 == LOW) {
+        ledState1 = HIGH;
+      } else {
+        ledState1 = LOW;
       }
+      digitalWrite(ledOnePin, ledState1);
     }
-    if (distance1 < 5 && flag1 == true){
-          Serial.println("test");
-          xapi1=false;
-          digitalWrite(ledOnePin,LOW);
-          noTone(buzzerPin);
-          buzzerRinging = false;
-          flag1 = false;
-        } 
+  }
 
-        ///////////////
+  if ( digitalRead(switchReed1) == LOW && flag1 == true) {
+    Serial.println("test");
+    xapi1 = false;
+    digitalWrite(ledOnePin, LOW);
+    noTone(buzzerPin);
+    buzzerRinging = false;
+    flag1 = false;
+  }
 
-        if ( distance2 <= 5 && currentMillis - previousMillis2 >= interval2 && xapi2 == false) {
-      //Άναψε το δεύτερο λαμπάκι στο pin ledOnePin, ώστε να δείξεις στο χρήστη ποιο καπάκι πρέπει να ανοιξει
-      xapi2 = true;
-      digitalWrite(ledTwoPin, HIGH);
-      tone(buzzerPin, 1000);
-      buzzerRinging = true;
-      delay(200); 
-      previousMillis2 = currentMillis;
-    }
+  ///////////////
+  if ( digitalRead(switchReed2) == HIGH && currentMillis - previousMillis2 >= interval2 && xapi2 == false) {
+    //Άναψε το δεύτερο λαμπάκι στο pin ledOnePin, ώστε να δείξεις στο χρήστη ποιο καπάκι πρέπει να ανοιξει
+    xapi2 = true;
+    digitalWrite(ledTwoPin, HIGH);
+    tone(buzzerPin, 1000);
+    buzzerRinging = true;
+    delay(200);
+    previousMillis2 = currentMillis;
+  }
 
-    if (distance2 > 5 && xapi2 == true ) {
-      flag2 = true;
-      if ((currentMillis - ledMillis2) >= intervalled) {
-    // save the last time you blinked the LED
-    ledMillis2 = currentMillis;
 
-    // if the LED is off turn it on and vice-versa:
-    if (ledState2 == LOW) {
-      ledState2 = HIGH;
-    } else {
-      ledState2 = LOW;
-    }
-    digitalWrite(ledTwoPin, ledState2);
+
+  if ( digitalRead(switchReed2) == LOW && xapi2 == true ) {
+    flag2 = true;
+    if ((currentMillis - ledMillis2) >= intervalled) {
+      // save the last time you blinked the LED
+      ledMillis2 = currentMillis;
+      // if the LED is off turn it on and vice-versa:
+
+      if (ledState2 == LOW) {
+        ledState2 = HIGH;
+      } else {
+        ledState2 = LOW;
       }
+      digitalWrite(ledTwoPin, ledState2);
     }
-    if (distance2 < 5 && flag2 == true){
-          Serial.println("test");
-          xapi2=false;
-          digitalWrite(ledTwoPin,LOW);
-          noTone(buzzerPin);
-          buzzerRinging = false;
-          flag2 = false;
-        } 
+  }
 
-        //////////
+  if ( digitalRead(switchReed2) == LOW && flag2 == true) {
+    xapi2 = false;
+    digitalWrite(ledTwoPin, LOW);
+    noTone(buzzerPin);
+    buzzerRinging = false;
+    flag2 = false;
+
+  }
+  //////////
+
   timer = timer + 1;
-  
-  Serial.println(currentMillis);
-  Serial.println(distance1);
-  Serial.println(distance2);
+  // currentTime =0;
 
- // currentTime =0;  
-  if (timer == 11){
+  if (timer == 11) {
     timer = 0;
   }
- 
 }
-
-
 /////////////////
 
-
 long microsecondsToInches(long microseconds)
+
 {
+
   // According to Parallax's datasheet for the PING))), there are
   // 73.746 microseconds per inch (i.e. sound travels at 1130 feet per
   // second).  This gives the distance travelled by the ping, outbound
   // and return, so we divide by 2 to get the distance of the obstacle.
   return microseconds / 74 / 2;
-}
 
+}
 long microsecondsToCentimeters(long microseconds)
+
 {
+
   // The speed of sound is 340 m/s or 29 microseconds per centimeter.
   // The ping travels out and back, so to find the distance of the
   // object we take half of the distance travelled.
